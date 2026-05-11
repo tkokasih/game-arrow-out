@@ -6,9 +6,14 @@
 
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  color: #0f172a;
-  background: #f8fafc;
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
+  background: #0f0c29;
+  color: #e0e7ff;
 }
 
 .branch-banner {
@@ -22,14 +27,199 @@ body {
   color: #92400e;
 }
 
-main {
-  padding: clamp(1.5rem, 4vw, 3rem);
-  max-width: 56rem;
-  margin: 0 auto;
+/* ── Layout ── */
+
+.game-root {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  padding: 1.25rem 1rem;
+  background: linear-gradient(160deg, #1e1b4b 0%, #0f0c29 100%);
 }
 
-h1 {
-  font-size: clamp(1.75rem, 5vw, 3rem);
-  line-height: 1.1;
-  margin: 0 0 1rem;
+.game-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.game-header h1 {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  background: linear-gradient(90deg, #818cf8, #c084fc);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.game-stats {
+  font-size: 0.9rem;
+  color: #a5b4fc;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Board ── */
+
+.board-wrapper {
+  padding: 10px;
+  background: #1e1b4b;
+  border-radius: 14px;
+  box-shadow:
+    0 8px 40px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(129, 140, 248, 0.15);
+}
+
+.board {
+  position: relative;
+  background-color: #12103a;
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 51px,
+      rgba(255, 255, 255, 0.06) 51px,
+      rgba(255, 255, 255, 0.06) 52px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 51px,
+      rgba(255, 255, 255, 0.06) 51px,
+      rgba(255, 255, 255, 0.06) 52px
+    );
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+/* ── Block ── */
+
+.block {
+  will-change: left, top;
+}
+
+.arrow-btn {
+  background: rgba(0, 0, 0, 0.25);
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-radius: 8px;
+  width: 38px;
+  height: 38px;
+  font-size: 1.3rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  transition:
+    background 100ms,
+    transform 80ms;
+  touch-action: manipulation;
+}
+
+.arrow-btn:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.45);
+  transform: scale(1.1);
+}
+
+.arrow-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.arrow-btn:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+/* ── Controls ── */
+
+.game-controls {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.game-controls button {
+  padding: 0.55rem 1.4rem;
+  border-radius: 10px;
+  border: none;
+  background: #3730a3;
+  color: #e0e7ff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 120ms,
+    transform 80ms;
+  touch-action: manipulation;
+}
+
+.game-controls button:hover:not(:disabled) {
+  background: #4338ca;
+}
+
+.game-controls button:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.game-controls button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+/* ── Win overlay ── */
+
+.win-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  backdrop-filter: blur(4px);
+}
+
+.win-card {
+  background: #1e1b4b;
+  border: 1px solid rgba(129, 140, 248, 0.3);
+  border-radius: 18px;
+  padding: 2.25rem 2.75rem;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+
+.win-card h2 {
+  margin: 0 0 0.4rem;
+  font-size: 2rem;
+  background: linear-gradient(90deg, #818cf8, #c084fc);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.win-card p {
+  margin: 0 0 1.5rem;
+  color: #a5b4fc;
+  font-size: 1.1rem;
+}
+
+.win-card button {
+  padding: 0.65rem 1.75rem;
+  border-radius: 10px;
+  border: none;
+  background: #6366f1;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 120ms;
+}
+
+.win-card button:hover {
+  background: #818cf8;
 }

@@ -1,3 +1,5 @@
+import GameBoard from './components/GameBoard';
+
 function BranchBanner() {
   const branch = import.meta.env.VITE_BUILD_BRANCH;
   const sha = import.meta.env.VITE_BUILD_SHA;
@@ -16,10 +18,7 @@ export default function App() {
   return (
     <>
       <BranchBanner />
-      <main>
-        <h1>Template SPA</h1>
-        <p>Start building your app here.</p>
-      </main>
+      <GameBoard />
     </>
   );
 }
