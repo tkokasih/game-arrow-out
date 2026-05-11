@@ -9,8 +9,22 @@ interface HistoryEntry {
   moves: number;
 }
 
+function exitPosition(block: Block): { x: number; y: number } {
+  switch (block.arrow) {
+    case 'right':
+      return { x: GRID_COLS, y: block.y };
+    case 'left':
+      return { x: -block.w, y: block.y };
+    case 'down':
+      return { x: block.x, y: GRID_ROWS };
+    case 'up':
+      return { x: block.x, y: -block.h };
+  }
+}
+
 export default function GameBoard() {
   const [blocks, setBlocks] = useState<Block[]>(() => generatePuzzle());
+  const [escapingBlocks, setEscapingBlocks] = useState<Block[]>([]);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [moves, setMoves] = useState(0);
   const [animating, setAnimating] = useState(false);
@@ -29,7 +43,26 @@ export default function GameBoard() {
       setHistory((h) => [...h, { blocks, moves }]);
       setBlocks((prev) => prev.filter((b) => b.id !== id));
       setMoves((m) => m + 1);
-      if (willWin) setWon(true);
+      setAnimating(true);
+
+      // Add the escaping block at its current position, then move it off-board
+      // in the next two frames so the CSS transition fires.
+      const escaper = { ...block };
+      setEscapingBlocks((prev) => [...prev, escaper]);
+      const exit = exitPosition(block);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setEscapingBlocks((prev) =>
+            prev.map((b) => (b.id === id ? { ...b, x: exit.x, y: exit.y } : b))
+          );
+        });
+      });
+
+      setTimeout(() => {
+        setEscapingBlocks((prev) => prev.filter((b) => b.id !== id));
+        setAnimating(false);
+        if (willWin) setWon(true);
+      }, 300);
     } else if (result.newX !== block.x || result.newY !== block.y) {
       setHistory((h) => [...h, { blocks, moves }]);
       setBlocks((prev) =>
@@ -52,6 +85,7 @@ export default function GameBoard() {
 
   function handleRestart() {
     setBlocks(generatePuzzle());
+    setEscapingBlocks([]);
     setHistory([]);
     setMoves(0);
     setWon(false);
@@ -77,6 +111,9 @@ export default function GameBoard() {
               animating={animating}
               onClick={handleBlockClick}
             />
+          ))}
+          {escapingBlocks.map((block) => (
+            <BlockTile key={`esc-${block.id}`} block={block} animating={true} onClick={() => {}} />
           ))}
         </div>
       </div>

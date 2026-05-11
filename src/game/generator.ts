@@ -8,15 +8,17 @@ function rand(n: number): number {
 }
 
 function tryPlaceBlocks(): Block[] | null {
-  const count = 5 + rand(3); // 5, 6, or 7
+  const count = 8 + rand(4); // 8, 9, 10, or 11
   const occupied = new Set<string>();
   const blocks: Block[] = [];
 
   for (let i = 0; i < count; i++) {
     let placed = false;
     for (let attempt = 0; attempt < 200; attempt++) {
-      const w = 1 + rand(2);
-      const h = 1 + rand(2);
+      // Bias toward 1×1 and 1×2 so more blocks fit on the grid
+      const r = rand(4);
+      const w = r < 3 ? 1 : 2;
+      const h = r === 0 ? 1 : r < 3 ? 1 + rand(2) : 1 + rand(2);
       const x = rand(GRID_COLS - w + 1);
       const y = rand(GRID_ROWS - h + 1);
       const arrow = DIRECTIONS[rand(4)];
