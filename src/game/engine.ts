@@ -4,40 +4,55 @@ function buildOccupancy(blocks: Block[], excludeId?: string): Set<string> {
   const occupied = new Set<string>();
   for (const block of blocks) {
     if (block.id === excludeId) continue;
-    for (let dy = 0; dy < block.h; dy++) {
-      for (let dx = 0; dx < block.w; dx++) {
-        occupied.add(`${block.x + dx},${block.y + dy}`);
-      }
+    for (const [dx, dy] of block.cells) {
+      occupied.add(`${block.x + dx},${block.y + dy}`);
     }
   }
   return occupied;
 }
 
-function corridorClear(occupied: Set<string>, cols: number[], rows: number[]): boolean {
-  for (const c of cols) {
-    for (const r of rows) {
-      if (occupied.has(`${c},${r}`)) return false;
+// Returns absolute [col, row] of the outermost cells facing direction dir.
+function leadingEdge(block: Block, dir: Direction, ox = block.x, oy = block.y): [number, number][] {
+  const abs = block.cells.map(([dx, dy]): [number, number] => [ox + dx, oy + dy]);
+  switch (dir) {
+    case 'right': {
+      const m = new Map<number, number>();
+      for (const [c, r] of abs) if (!m.has(r) || c > m.get(r)!) m.set(r, c);
+      return [...m.entries()].map(([r, c]) => [c, r]);
+    }
+    case 'left': {
+      const m = new Map<number, number>();
+      for (const [c, r] of abs) if (!m.has(r) || c < m.get(r)!) m.set(r, c);
+      return [...m.entries()].map(([r, c]) => [c, r]);
+    }
+    case 'down': {
+      const m = new Map<number, number>();
+      for (const [c, r] of abs) if (!m.has(c) || r > m.get(c)!) m.set(c, r);
+      return [...m.entries()].map(([c, r]) => [c, r]);
+    }
+    case 'up': {
+      const m = new Map<number, number>();
+      for (const [c, r] of abs) if (!m.has(c) || r < m.get(c)!) m.set(c, r);
+      return [...m.entries()].map(([c, r]) => [c, r]);
     }
   }
-  return true;
 }
 
 export function canEscape(block: Block, allBlocks: Block[]): boolean {
   const occupied = buildOccupancy(allBlocks, block.id);
-  const { x, y, w, h, arrow } = block;
-  const rowRange = range(y, y + h);
-  const colRange = range(x, x + w);
+  const edge = leadingEdge(block, block.arrow);
+  const { dx, dy } = dirStep(block.arrow);
 
-  switch (arrow) {
-    case 'right':
-      return corridorClear(occupied, range(x + w, GRID_COLS), rowRange);
-    case 'left':
-      return corridorClear(occupied, range(0, x), rowRange);
-    case 'down':
-      return corridorClear(occupied, colRange, range(y + h, GRID_ROWS));
-    case 'up':
-      return corridorClear(occupied, colRange, range(0, y));
+  for (const [ec, er] of edge) {
+    let c = ec + dx;
+    let r = er + dy;
+    while (c >= 0 && c < GRID_COLS && r >= 0 && r < GRID_ROWS) {
+      if (occupied.has(`${c},${r}`)) return false;
+      c += dx;
+      r += dy;
+    }
   }
+  return true;
 }
 
 export function slideBlock(block: Block, allBlocks: Block[]): MoveResult {
@@ -46,57 +61,25 @@ export function slideBlock(block: Block, allBlocks: Block[]): MoveResult {
   }
 
   const occupied = buildOccupancy(allBlocks, block.id);
-  const { x, y, w, h, arrow } = block;
-  const step = dirStep(arrow);
+  const { dx, dy } = dirStep(block.arrow);
+  const edge = leadingEdge(block, block.arrow);
 
-  let cx = x;
-  let cy = y;
+  let cx = block.x;
+  let cy = block.y;
 
-  while (true) {
-    const nx = cx + step.dx;
-    const ny = cy + step.dy;
-
-    if (nx < 0 || ny < 0 || nx + w > GRID_COLS || ny + h > GRID_ROWS) break;
-
-    // Check leading edge cells at the new position
-    let blocked = false;
-    if (step.dx === 1) {
-      // moving right: check column nx+w-1
-      for (let r = ny; r < ny + h; r++) {
-        if (occupied.has(`${nx + w - 1},${r}`)) {
-          blocked = true;
-          break;
-        }
-      }
-    } else if (step.dx === -1) {
-      // moving left: check column nx
-      for (let r = ny; r < ny + h; r++) {
-        if (occupied.has(`${nx},${r}`)) {
-          blocked = true;
-          break;
-        }
-      }
-    } else if (step.dy === 1) {
-      // moving down: check row ny+h-1
-      for (let c = nx; c < nx + w; c++) {
-        if (occupied.has(`${c},${ny + h - 1}`)) {
-          blocked = true;
-          break;
-        }
-      }
-    } else {
-      // moving up: check row ny
-      for (let c = nx; c < nx + w; c++) {
-        if (occupied.has(`${c},${ny}`)) {
-          blocked = true;
-          break;
-        }
+  for (let steps = 1; ; steps++) {
+    let stop = false;
+    for (const [ec, er] of edge) {
+      const nc = ec + dx * steps;
+      const nr = er + dy * steps;
+      if (nc < 0 || nc >= GRID_COLS || nr < 0 || nr >= GRID_ROWS || occupied.has(`${nc},${nr}`)) {
+        stop = true;
+        break;
       }
     }
-
-    if (blocked) break;
-    cx = nx;
-    cy = ny;
+    if (stop) break;
+    cx = block.x + dx * steps;
+    cy = block.y + dy * steps;
   }
 
   return { escaped: false, newX: cx, newY: cy };
@@ -108,7 +91,6 @@ export function findSolution(blocks: Block[]): string[] | null {
 
 function dfs(remaining: Block[]): string[] | null {
   if (remaining.length === 0) return [];
-
   for (const block of remaining) {
     if (canEscape(block, remaining)) {
       const rest = remaining.filter((b) => b.id !== block.id);
@@ -116,14 +98,7 @@ function dfs(remaining: Block[]): string[] | null {
       if (result !== null) return [block.id, ...result];
     }
   }
-
   return null;
-}
-
-function range(start: number, end: number): number[] {
-  const out: number[] = [];
-  for (let i = start; i < end; i++) out.push(i);
-  return out;
 }
 
 function dirStep(dir: Direction): { dx: number; dy: number } {

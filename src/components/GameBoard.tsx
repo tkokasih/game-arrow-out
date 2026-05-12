@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Block, CELL_SIZE, GRID_COLS, GRID_ROWS } from '../game/types';
+import { Block, CELL_SIZE, GRID_COLS, GRID_ROWS, blockW, blockH } from '../game/types';
 import { slideBlock } from '../game/engine';
 import { generatePuzzle } from '../game/generator';
 import BlockTile from './Block';
@@ -14,11 +14,11 @@ function exitPosition(block: Block): { x: number; y: number } {
     case 'right':
       return { x: GRID_COLS, y: block.y };
     case 'left':
-      return { x: -block.w, y: block.y };
+      return { x: -blockW(block), y: block.y };
     case 'down':
       return { x: block.x, y: GRID_ROWS };
     case 'up':
-      return { x: block.x, y: -block.h };
+      return { x: block.x, y: -blockH(block) };
   }
 }
 
